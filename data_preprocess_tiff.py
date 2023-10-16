@@ -19,7 +19,7 @@ from normalize_staining import normalize_staining
 
 
 # General setting
-# register_levels = [0]
+
 max_patch_size = Parameter.get_value("max_patch_size")
 
 def pre_processing(filename, grayscale_levels=[], rgba_levels=[], manual_crop=False, manual_boundary=None, format=[], show=False, threshold_rgb=True, stain_normalization=True, tissue_threshold=0.001):
@@ -29,8 +29,6 @@ def pre_processing(filename, grayscale_levels=[], rgba_levels=[], manual_crop=Fa
     all_levels = list(combined_levels_set)
 
     for extern_file in [file for file in os.listdir(paths.raw_data_path) if file != ".DS_Store"]:
-        # print(extern_file)
-        # print('filename', filename)
         if (filename == extern_file) and ('.tiff' in extern_file):
             b_t = time.time()
 
@@ -48,16 +46,8 @@ def pre_processing(filename, grayscale_levels=[], rgba_levels=[], manual_crop=Fa
             # detect boundaries
             if not manual_crop:
                 x, y, w, h = utils.boundary_detect(curr_level_img)
-                # print(f'x, y, w, h = {(x, y, w, h)}')
-
-            # I think I can remove this, since the TIFF images don't have manual boundaries
-            # else:
-            #     assert manual_boundary is not None
-            #     x, y, w, h = manual_boundary  # TO DEFINE
 
             downsample_factor = int(slide.level_downsamples[curr_level] / slide.level_downsamples[0])
-            # print(f'downsample_factor = {downsample_factor}')
-            # print(f'slide.level_downsamples = {slide.level_downsamples}')
             orig_x = downsample_factor * x  # boundary with the maximal area (level 0)
             orig_y = downsample_factor * y
 
@@ -131,7 +121,6 @@ def pre_processing(filename, grayscale_levels=[], rgba_levels=[], manual_crop=Fa
                             # load and save the RGBA image patches
                             temp_img_patch = np.array(slide.read_region(location=(x_pos, y_pos), level=0, size=(curr_w, curr_h)))
 
-# ========================================================================================================
 
                             mask = np.ones((temp_img_patch.shape[0], temp_img_patch.shape[1]))
                             if len(thresholds) > 1:  #: Apply threshold on RGB channels
@@ -151,7 +140,6 @@ def pre_processing(filename, grayscale_levels=[], rgba_levels=[], manual_crop=Fa
                                 if temp_img_patch is None: # or temp_img_patch.shape != (224, 224, 3):
                                     continue
 
-# ========================================================================================================
                                  # generate and save the rgb image patches
                                 if level in rgba_levels:
 
@@ -183,7 +171,7 @@ def pre_processing(filename, grayscale_levels=[], rgba_levels=[], manual_crop=Fa
                 else:
                     temp_img = np.array(slide.read_region(location=(orig_x, orig_y), level=level, size=(temp_w, temp_h)))
 
-                    # For the whole image, there is no need to check the tisuue ratio
+                    # For the whole image, there is no need to check the tissue ratio
 
                     if stain_normalization:
                         # temp_img_patch is sliced because normalize staining needs an RGB input (read_region returns RGBA)
@@ -200,7 +188,6 @@ def pre_processing(filename, grayscale_levels=[], rgba_levels=[], manual_crop=Fa
                             mpimg.imsave(to_save_jpg_path, to_save_jpg)
 
                     if level in grayscale_levels:
-                        # temp_gray_img = (1 - color.rgb2gray(color.rgba2rgb(temp_img))).astype(np.float32)
                         temp_gray_img = (1 - color.rgb2gray(temp_img[:, :, :3])).astype(np.float32)
                         if 'mha' in format:
                             to_save_mha = sitk.GetImageFromArray(temp_gray_img)
